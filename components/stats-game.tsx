@@ -4,14 +4,14 @@ import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { BasketballCourt } from '@/components/basketball-court'
-import { PlayerCard } from '@/components/player-card'
+import { StatsPlayerCard } from '@/components/stats-player-card'
 import { GuessInput } from '@/components/guess-input'
-import { COLLEGE_PUZZLE, getHint, type Hint } from '@/lib/game-data'
+import { STATS_PUZZLE, getHint, type Hint } from '@/lib/game-data'
 import Image from 'next/image'
 
 type GameState = 'playing' | 'won' | 'lost'
 
-interface StartingFiveGameProps {
+interface StatsGameProps {
   onBack: () => void
 }
 
@@ -38,12 +38,12 @@ function FlameIcon() {
   )
 }
 
-export function StartingFiveGame({ onBack }: StartingFiveGameProps) {
+export function StatsGame({ onBack }: StatsGameProps) {
   const [gameState, setGameState] = useState<GameState>('playing')
   const [attempts, setAttempts] = useState<string[]>([])
   const [hints, setHints] = useState<Hint[]>([])
   const [streak, setStreak] = useState(0)
-  const puzzle = COLLEGE_PUZZLE
+  const puzzle = STATS_PUZZLE
   const attemptsLeft = 3 - attempts.length
 
   useEffect(() => {
@@ -65,7 +65,6 @@ export function StartingFiveGame({ onBack }: StartingFiveGameProps) {
   const handleGuess = useCallback((teamName: string) => {
     if (gameState !== 'playing') return
     const correctTeamFull = `${puzzle.teamCity} ${puzzle.teamName}`
-
     if (teamName === correctTeamFull) {
       setGameState('won')
       const newStreak = streak + 1
@@ -74,12 +73,10 @@ export function StartingFiveGame({ onBack }: StartingFiveGameProps) {
       fireConfetti()
       return
     }
-
     const newAttempts = [...attempts, teamName]
     setAttempts(newAttempts)
     const hint = getHint(teamName, correctTeamFull, puzzle.conference, puzzle.division)
     setHints([...hints, hint])
-
     if (newAttempts.length >= 3) {
       setGameState('lost')
       setStreak(0)
@@ -125,7 +122,7 @@ export function StartingFiveGame({ onBack }: StartingFiveGameProps) {
               className="text-[11px] font-semibold tracking-widest uppercase mt-1"
               style={{ color: 'oklch(0.55 0 0)' }}
             >
-              College &amp; Country
+              Stats Mode
             </span>
           </div>
 
@@ -147,28 +144,27 @@ export function StartingFiveGame({ onBack }: StartingFiveGameProps) {
 
         {/* ── Court ── */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 0.45, delay: 0.15 }}
         >
           <BasketballCourt>
             {puzzle.players.map((player, index) => (
-              <PlayerCard
+              <StatsPlayerCard
                 key={player.position}
                 player={player}
-                clueMode={puzzle.clueMode}
                 isRevealed={isRevealed}
-                delay={0.3 + index * 0.1}
+                delay={0.25 + index * 0.08}
               />
             ))}
           </BasketballCourt>
         </motion.div>
 
-        {/* Previous Guesses & Hints */}
+        {/* ── Hints ── */}
         <AnimatePresence>
           {hints.length > 0 && (
             <motion.div
-              className="mt-4 space-y-2"
+              className="mt-5 space-y-2"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
@@ -176,31 +172,31 @@ export function StartingFiveGame({ onBack }: StartingFiveGameProps) {
               {attempts.map((attempt, index) => (
                 <motion.div
                   key={index}
-                  className={`flex items-center justify-between px-4 py-2 rounded-lg text-sm ${
+                  className={`flex items-center justify-between px-4 py-2.5 rounded-xl text-sm ${
                     hints[index]?.type === 'hot'
                       ? 'bg-orange-500/20 border border-orange-500/30'
                       : hints[index]?.type === 'warm'
                       ? 'bg-yellow-500/20 border border-yellow-500/30'
                       : 'bg-blue-500/20 border border-blue-500/30'
                   }`}
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -16 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ delay: index * 0.08 }}
                 >
-                  <span className="font-medium text-foreground">{attempt}</span>
-                  <span className="text-muted-foreground">{hints[index]?.message}</span>
+                  <span className="font-semibold text-foreground">{attempt}</span>
+                  <span className="text-muted-foreground text-xs">{hints[index]?.message}</span>
                 </motion.div>
               ))}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Guess Input or Result */}
+        {/* ── Guess input / Result ── */}
         <motion.div
-          className="mt-4"
-          initial={{ opacity: 0, y: 20 }}
+          className="mt-6"
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.8 }}
+          transition={{ duration: 0.4, delay: 0.7 }}
         >
           {gameState === 'playing' ? (
             <GuessInput
@@ -210,80 +206,41 @@ export function StartingFiveGame({ onBack }: StartingFiveGameProps) {
             />
           ) : (
             <motion.div
-              className={`w-full p-4 sm:p-6 rounded-xl border ${
+              className={`w-full p-5 sm:p-7 rounded-2xl border ${
                 gameState === 'won'
                   ? 'bg-gradient-to-r from-green-500/20 to-orange-500/20 border-green-500/30'
                   : 'bg-card border-border'
               }`}
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.92 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: 'spring', stiffness: 200 }}
             >
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
                 <motion.div
                   className="relative w-20 h-20 sm:w-24 sm:h-24"
                   initial={{ scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
                 >
-                  <Image
-                    src={puzzle.teamLogo}
-                    alt={`${puzzle.teamCity} ${puzzle.teamName}`}
-                    fill
-                    className="object-contain"
-                    unoptimized
-                  />
+                  <Image src={puzzle.teamLogo} alt={`${puzzle.teamCity} ${puzzle.teamName}`} fill className="object-contain" unoptimized />
                 </motion.div>
-
                 <div className="text-center sm:text-left">
                   {gameState === 'won' ? (
                     <>
-                      <motion.h2
-                        className="text-xl sm:text-2xl font-bold text-green-500 mb-1"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                      >
-                        Correct!
-                      </motion.h2>
-                      <motion.p
-                        className="text-muted-foreground text-sm"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.4 }}
-                      >
-                        You got it in {attempts.length + 1}{' '}
-                        {attempts.length === 0 ? 'attempt' : 'attempts'}!
+                      <motion.h2 className="text-2xl font-black text-green-500 mb-1" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>Correct!</motion.h2>
+                      <motion.p className="text-muted-foreground text-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
+                        You got it in {attempts.length + 1} {attempts.length === 0 ? 'attempt' : 'attempts'}!
                       </motion.p>
                     </>
                   ) : (
                     <>
-                      <motion.h2
-                        className="text-xl sm:text-2xl font-bold text-destructive mb-1"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                      >
-                        Game Over
-                      </motion.h2>
-                      <motion.p
-                        className="text-muted-foreground text-sm"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.4 }}
-                      >
-                        Better luck tomorrow!
-                      </motion.p>
+                      <motion.h2 className="text-2xl font-black text-destructive mb-1" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>Game Over</motion.h2>
+                      <motion.p className="text-muted-foreground text-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>Better luck tomorrow!</motion.p>
                     </>
                   )}
-                  <motion.div
-                    className="mt-2"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                  >
+                  <motion.div className="mt-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
                     <p className="text-xs text-muted-foreground">{puzzle.teamCity}</p>
-                    <p className="text-lg sm:text-xl font-bold text-foreground">{puzzle.teamName}</p>
+                    <p className="text-xl font-black text-foreground">{puzzle.teamName}</p>
                   </motion.div>
                 </div>
               </div>
@@ -291,15 +248,11 @@ export function StartingFiveGame({ onBack }: StartingFiveGameProps) {
           )}
         </motion.div>
 
-        {/* Footer */}
-        <motion.p
-          className="text-center text-xs text-muted-foreground mt-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
-        >
+        {/* ── Footer ── */}
+        <motion.p className="text-center text-xs text-muted-foreground mt-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}>
           New puzzle every day at midnight
         </motion.p>
+
       </div>
     </div>
   )
