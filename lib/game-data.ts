@@ -1,16 +1,21 @@
-export type ClueMode = 'college' | 'stats' | 'nationality'
+export type ClueMode = 'college' | 'stats'
 
 export type Position = 'PG' | 'SG' | 'SF' | 'PF' | 'C'
+
+export interface PlayerStats {
+  pts: number
+  reb: number
+  ast: number
+}
 
 export interface Player {
   name: string
   position: Position
   college: string
   collegeLogo: string
-  stat: string
-  statLabel: string
+  stats: PlayerStats
   nationality: string
-  nationalityFlag: string
+  nationalityCode: string
   headshotUrl: string
 }
 
@@ -21,7 +26,6 @@ export interface DailyPuzzle {
   teamLogo: string
   conference: string
   division: string
-  clueMode: ClueMode
   players: Player[]
 }
 
