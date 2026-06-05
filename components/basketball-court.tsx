@@ -8,44 +8,44 @@ interface BasketballCourtProps {
 
 export function BasketballCourt({ children }: BasketballCourtProps) {
   return (
-    <div className="relative w-full max-w-lg mx-auto aspect-[4/5]">
-      {/* Court background with wood texture effect */}
+    <div className="relative w-full max-w-2xl mx-auto aspect-[16/10]">
+      {/* Court background with wood texture effect - vertical grain */}
       <div
         className="absolute inset-0 rounded-xl overflow-hidden"
         style={{
           background: `
             repeating-linear-gradient(
-              90deg,
+              0deg,
               oklch(0.32 0.05 45) 0px,
-              oklch(0.35 0.06 45) 8px,
-              oklch(0.30 0.04 40) 16px,
-              oklch(0.34 0.05 48) 24px,
-              oklch(0.31 0.04 42) 32px
+              oklch(0.35 0.06 45) 12px,
+              oklch(0.30 0.04 40) 24px,
+              oklch(0.34 0.05 48) 36px,
+              oklch(0.31 0.04 42) 48px
             )
           `,
           boxShadow: 'inset 0 0 60px rgba(0,0,0,0.3)',
         }}
       >
-        {/* Wood grain overlay */}
+        {/* Subtle vertical wood grain overlay */}
         <div
-          className="absolute inset-0 opacity-20"
+          className="absolute inset-0 opacity-15"
           style={{
             backgroundImage: `
               repeating-linear-gradient(
-                90deg,
+                0deg,
                 transparent 0px,
-                transparent 3px,
-                rgba(0,0,0,0.1) 4px,
-                transparent 5px
+                transparent 4px,
+                rgba(0,0,0,0.08) 5px,
+                transparent 6px
               )
             `,
           }}
         />
       </div>
 
-      {/* Court SVG with lines */}
+      {/* Court SVG with lines - wider aspect ratio */}
       <svg
-        viewBox="0 0 400 500"
+        viewBox="0 0 640 400"
         className="absolute inset-0 w-full h-full"
         preserveAspectRatio="xMidYMid meet"
       >
@@ -53,27 +53,27 @@ export function BasketballCourt({ children }: BasketballCourtProps) {
         <rect
           x="20"
           y="20"
-          width="360"
-          height="460"
+          width="600"
+          height="360"
           fill="none"
           stroke="oklch(0.95 0 0)"
           strokeWidth="3"
           rx="4"
         />
 
-        {/* Half court line */}
+        {/* Half court line (top) */}
         <line
           x1="20"
-          y1="40"
-          x2="380"
-          y2="40"
+          y1="20"
+          x2="620"
+          y2="20"
           stroke="oklch(0.95 0 0)"
           strokeWidth="3"
         />
 
-        {/* Center circle (partial - just the arc visible) */}
+        {/* Center circle arc (at top) */}
         <motion.path
-          d="M 140 40 A 60 60 0 0 1 260 40"
+          d="M 260 20 A 60 60 0 0 1 380 20"
           fill="none"
           stroke="oklch(0.95 0 0)"
           strokeWidth="3"
@@ -82,9 +82,9 @@ export function BasketballCourt({ children }: BasketballCourtProps) {
           transition={{ duration: 1, delay: 0.2 }}
         />
 
-        {/* Three-point line */}
+        {/* Three-point line - wider arc */}
         <motion.path
-          d="M 40 480 L 40 320 Q 40 180 200 180 Q 360 180 360 320 L 360 480"
+          d="M 60 380 L 60 200 Q 60 80 320 80 Q 580 80 580 200 L 580 380"
           fill="none"
           stroke="oklch(0.95 0 0)"
           strokeWidth="3"
@@ -95,10 +95,10 @@ export function BasketballCourt({ children }: BasketballCourtProps) {
 
         {/* Paint / Key */}
         <motion.rect
-          x="120"
-          y="320"
-          width="160"
-          height="160"
+          x="220"
+          y="240"
+          width="200"
+          height="140"
           fill="none"
           stroke="oklch(0.95 0 0)"
           strokeWidth="3"
@@ -109,8 +109,8 @@ export function BasketballCourt({ children }: BasketballCourtProps) {
 
         {/* Free throw circle */}
         <motion.circle
-          cx="200"
-          cy="320"
+          cx="320"
+          cy="240"
           r="60"
           fill="none"
           stroke="oklch(0.95 0 0)"
@@ -120,11 +120,81 @@ export function BasketballCourt({ children }: BasketballCourtProps) {
           transition={{ duration: 0.8, delay: 0.8 }}
         />
 
-        {/* Rim */}
+        {/* Lane / Block marks - left side */}
+        <motion.line
+          x1="220"
+          y1="290"
+          x2="230"
+          y2="290"
+          stroke="oklch(0.95 0 0)"
+          strokeWidth="3"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ delay: 0.9 }}
+        />
+        <motion.line
+          x1="220"
+          y1="320"
+          x2="230"
+          y2="320"
+          stroke="oklch(0.95 0 0)"
+          strokeWidth="3"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ delay: 0.95 }}
+        />
+        <motion.line
+          x1="220"
+          y1="350"
+          x2="230"
+          y2="350"
+          stroke="oklch(0.95 0 0)"
+          strokeWidth="3"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ delay: 1 }}
+        />
+
+        {/* Lane / Block marks - right side */}
+        <motion.line
+          x1="410"
+          y1="290"
+          x2="420"
+          y2="290"
+          stroke="oklch(0.95 0 0)"
+          strokeWidth="3"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ delay: 0.9 }}
+        />
+        <motion.line
+          x1="410"
+          y1="320"
+          x2="420"
+          y2="320"
+          stroke="oklch(0.95 0 0)"
+          strokeWidth="3"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ delay: 0.95 }}
+        />
+        <motion.line
+          x1="410"
+          y1="350"
+          x2="420"
+          y2="350"
+          stroke="oklch(0.95 0 0)"
+          strokeWidth="3"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ delay: 1 }}
+        />
+
+        {/* Rim only - orange circle in paint */}
         <motion.circle
-          cx="200"
-          cy="440"
-          r="12"
+          cx="320"
+          cy="355"
+          r="10"
           fill="none"
           stroke="oklch(0.70 0.18 45)"
           strokeWidth="4"
@@ -133,22 +203,9 @@ export function BasketballCourt({ children }: BasketballCourtProps) {
           transition={{ duration: 0.4, delay: 1 }}
         />
 
-        {/* Backboard */}
-        <motion.line
-          x1="160"
-          y1="465"
-          x2="240"
-          y2="465"
-          stroke="oklch(0.95 0 0)"
-          strokeWidth="4"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 0.4, delay: 1 }}
-        />
-
-        {/* Restricted area */}
+        {/* Restricted area arc */}
         <motion.path
-          d="M 160 480 A 40 40 0 0 1 240 480"
+          d="M 280 380 A 40 40 0 0 1 360 380"
           fill="none"
           stroke="oklch(0.95 0 0)"
           strokeWidth="2"
