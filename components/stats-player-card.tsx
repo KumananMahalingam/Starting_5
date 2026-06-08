@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import type { Player, Position } from '@/lib/game-data'
-import Image from 'next/image'
+import { PlayerHeadshot } from '@/components/player-headshot'
 
 interface StatsPlayerCardProps {
   player: Player
@@ -36,25 +36,13 @@ export function StatsPlayerCard({ player, isRevealed, delay = 0 }: StatsPlayerCa
       }}
     >
       {isRevealed ? (
-        /* Revealed: show headshot + name */
         <motion.div
           className="flex flex-col items-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4 }}
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.35 }}
         >
-          <div
-            className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-full overflow-hidden ring-2"
-            style={{ ringColor: 'oklch(0.70 0.18 45)' }}
-          >
-            <Image
-              src={player.headshotUrl}
-              alt={player.name}
-              fill
-              className="object-cover object-top scale-150"
-              unoptimized
-            />
-          </div>
+          <PlayerHeadshot name={player.name} headshotUrl={player.headshotUrl} />
           <span className="text-[10px] sm:text-xs font-semibold text-foreground mt-1.5 text-center max-w-[90px] leading-tight">
             {player.name}
           </span>

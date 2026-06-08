@@ -1,82 +1,63 @@
-'use client'
-
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { NBA_TEAMS } from '@/lib/game-data'
 import Image from 'next/image'
+import { ALL_SEASONS } from '@/lib/game-data'
+import { NBA_TEAMS, TEAM_LOGOS, getTeamsForSeason } from '@/lib/team-data'
 
 interface GuessInputProps {
-  onGuess: (team: string) => void
+  onGuess: (teamName: string, season: string) => void
   disabled: boolean
   attemptsLeft: number
 }
 
-// Team logos mapping
-const TEAM_LOGOS: Record<string, string> = {
-  'Atlanta Hawks': 'https://cdn.nba.com/logos/nba/1610612737/global/L/logo.svg',
-  'Boston Celtics': 'https://cdn.nba.com/logos/nba/1610612738/global/L/logo.svg',
-  'Brooklyn Nets': 'https://cdn.nba.com/logos/nba/1610612751/global/L/logo.svg',
-  'Charlotte Hornets': 'https://cdn.nba.com/logos/nba/1610612766/global/L/logo.svg',
-  'Chicago Bulls': 'https://cdn.nba.com/logos/nba/1610612741/global/L/logo.svg',
-  'Cleveland Cavaliers': 'https://cdn.nba.com/logos/nba/1610612739/global/L/logo.svg',
-  'Dallas Mavericks': 'https://cdn.nba.com/logos/nba/1610612742/global/L/logo.svg',
-  'Denver Nuggets': 'https://cdn.nba.com/logos/nba/1610612743/global/L/logo.svg',
-  'Detroit Pistons': 'https://cdn.nba.com/logos/nba/1610612765/global/L/logo.svg',
-  'Golden State Warriors': 'https://cdn.nba.com/logos/nba/1610612744/global/L/logo.svg',
-  'Houston Rockets': 'https://cdn.nba.com/logos/nba/1610612745/global/L/logo.svg',
-  'Indiana Pacers': 'https://cdn.nba.com/logos/nba/1610612754/global/L/logo.svg',
-  'LA Clippers': 'https://cdn.nba.com/logos/nba/1610612746/global/L/logo.svg',
-  'Los Angeles Lakers': 'https://cdn.nba.com/logos/nba/1610612747/global/L/logo.svg',
-  'Memphis Grizzlies': 'https://cdn.nba.com/logos/nba/1610612763/global/L/logo.svg',
-  'Miami Heat': 'https://cdn.nba.com/logos/nba/1610612748/global/L/logo.svg',
-  'Milwaukee Bucks': 'https://cdn.nba.com/logos/nba/1610612749/global/L/logo.svg',
-  'Minnesota Timberwolves': 'https://cdn.nba.com/logos/nba/1610612750/global/L/logo.svg',
-  'New Orleans Pelicans': 'https://cdn.nba.com/logos/nba/1610612740/global/L/logo.svg',
-  'New York Knicks': 'https://cdn.nba.com/logos/nba/1610612752/global/L/logo.svg',
-  'Oklahoma City Thunder': 'https://cdn.nba.com/logos/nba/1610612760/global/L/logo.svg',
-  'Orlando Magic': 'https://cdn.nba.com/logos/nba/1610612753/global/L/logo.svg',
-  'Philadelphia 76ers': 'https://cdn.nba.com/logos/nba/1610612755/global/L/logo.svg',
-  'Phoenix Suns': 'https://cdn.nba.com/logos/nba/1610612756/global/L/logo.svg',
-  'Portland Trail Blazers': 'https://cdn.nba.com/logos/nba/1610612757/global/L/logo.svg',
-  'Sacramento Kings': 'https://cdn.nba.com/logos/nba/1610612758/global/L/logo.svg',
-  'San Antonio Spurs': 'https://cdn.nba.com/logos/nba/1610612759/global/L/logo.svg',
-  'Toronto Raptors': 'https://cdn.nba.com/logos/nba/1610612761/global/L/logo.svg',
-  'Utah Jazz': 'https://cdn.nba.com/logos/nba/1610612762/global/L/logo.svg',
-  'Washington Wizards': 'https://cdn.nba.com/logos/nba/1610612764/global/L/logo.svg',
-}
-
-export function GuessInput({ onGuess, disabled, attemptsLeft }: GuessInputProps) {
+const GuessInput = ({ onGuess, disabled, attemptsLeft }: GuessInputProps) => {
+  const [year, setYear] = useState('')
   const [value, setValue] = useState('')
   const [suggestions, setSuggestions] = useState<typeof NBA_TEAMS>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(-1)
+  const [showYearDropdown, setShowYearDropdown] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const suggestionsRef = useRef<HTMLDivElement>(null)
+  const yearRef = useRef<HTMLDivElement>(null)
+
+  const seasonTeams = year
+    ? getTeamsForSeason(year).map((t) => ({ name: `${t.teamCity} ${t.teamName}`, conference: t.conference, division: t.division }))
+    : []
 
   useEffect(() => {
-    if (value.length > 0) {
-      const filtered = NBA_TEAMS.filter((team) =>
+    if (value.length > 0 && year && !seasonTeams.some((t) => t.name.toLowerCase() === value.toLowerCase())) {
+      setValue('')
+      setSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+
+    if (value.length > 0 && year) {
+      const filtered = seasonTeams.filter((team) =>
         team.name.toLowerCase().includes(value.toLowerCase())
       )
       setSuggestions(filtered)
       setShowSuggestions(true)
       setSelectedIndex(-1)
     } else {
-      // Show all teams when focused with empty input
-      setSuggestions(NBA_TEAMS)
+      setSuggestions(year ? seasonTeams : [])
       setShowSuggestions(false)
     }
-  }, [value])
+  }, [value, year])
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
-        suggestionsRef.current &&
-        !suggestionsRef.current.contains(e.target as Node) &&
-        inputRef.current &&
-        !inputRef.current.contains(e.target as Node)
+        suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node) &&
+        inputRef.current && !inputRef.current.contains(e.target as Node)
       ) {
         setShowSuggestions(false)
+      }
+      if (
+        yearRef.current && !yearRef.current.contains(e.target as Node)
+      ) {
+        setShowYearDropdown(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -85,12 +66,13 @@ export function GuessInput({ onGuess, disabled, attemptsLeft }: GuessInputProps)
 
   const handleSubmit = (teamName?: string) => {
     const guessValue = teamName || value
-    const team = NBA_TEAMS.find(
+    const team = seasonTeams.find(
       (t) => t.name.toLowerCase() === guessValue.toLowerCase()
     )
-    if (team) {
-      onGuess(team.name)
+    if (team && year) {
+      onGuess(team.name, year)
       setValue('')
+      setYear('')
       setShowSuggestions(false)
     }
   }
@@ -111,23 +93,83 @@ export function GuessInput({ onGuess, disabled, attemptsLeft }: GuessInputProps)
       }
     } else if (e.key === 'Escape') {
       setShowSuggestions(false)
+      setShowYearDropdown(false)
     }
   }
 
   const handleSuggestionClick = (teamName: string) => {
-    handleSubmit(teamName)
+    setValue(teamName)
+    setShowSuggestions(false)
+    setSelectedIndex(-1)
   }
 
   const handleFocus = () => {
-    if (value.length === 0) {
-      setSuggestions(NBA_TEAMS)
+    if (year && value.length === 0) {
+      setSuggestions(seasonTeams)
+      setShowSuggestions(true)
     }
-    setShowSuggestions(true)
   }
+
+  const canSubmit = seasonTeams.some((t) => t.name.toLowerCase() === value.toLowerCase()) && year !== ''
+  const teamInputDisabled = disabled || !year
 
   return (
     <div className="relative w-full max-w-md mx-auto">
       <div className="flex gap-2">
+        {/* Season dropdown — first */}
+        <div className="relative w-[130px]" ref={yearRef}>
+          <button
+            type="button"
+            onClick={() => setShowYearDropdown(!showYearDropdown)}
+            disabled={disabled}
+            className="w-full px-3 py-3 bg-input border border-border rounded-lg text-foreground text-sm text-left focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
+          >
+            <span className={year ? '' : 'text-muted-foreground'}>
+              {year || 'Season'}
+            </span>
+            <svg
+              className={`w-4 h-4 ml-1 transition-transform ${showYearDropdown ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <AnimatePresence>
+            {showYearDropdown && (
+              <motion.div
+                className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg shadow-xl overflow-hidden max-h-48 overflow-y-auto"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.15 }}
+              >
+                {ALL_SEASONS.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    className={`w-full px-3 py-2 text-left text-sm transition-colors ${
+                      s === year
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-foreground hover:bg-muted'
+                    }`}
+                    onClick={() => {
+                      setYear(s)
+                      setValue('')
+                      setShowYearDropdown(false)
+                    }}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Team input — second, disabled until season selected */}
         <div className="relative flex-1">
           <input
             ref={inputRef}
@@ -136,12 +178,11 @@ export function GuessInput({ onGuess, disabled, attemptsLeft }: GuessInputProps)
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
             onFocus={handleFocus}
-            disabled={disabled}
-            placeholder="Search NBA teams..."
+            disabled={teamInputDisabled}
+            placeholder={year ? 'Search NBA teams...' : 'Pick a season first'}
             className="w-full px-4 py-3 bg-input border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           />
 
-          {/* Autocomplete dropdown with team logos */}
           <AnimatePresence>
             {showSuggestions && suggestions.length > 0 && (
               <motion.div
@@ -184,10 +225,9 @@ export function GuessInput({ onGuess, disabled, attemptsLeft }: GuessInputProps)
           </AnimatePresence>
         </div>
 
-        {/* Orange accent Guess button */}
         <motion.button
           onClick={() => handleSubmit()}
-          disabled={disabled || !NBA_TEAMS.some((t) => t.name.toLowerCase() === value.toLowerCase())}
+          disabled={disabled || !canSubmit}
           className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -195,24 +235,9 @@ export function GuessInput({ onGuess, disabled, attemptsLeft }: GuessInputProps)
           Guess
         </motion.button>
       </div>
-
-      {/* Attempts indicator - orange for remaining, gray for used */}
-      <div className="flex items-center justify-center gap-2 mt-3">
-        <span className="text-sm text-muted-foreground">Attempts left:</span>
-        <div className="flex gap-1.5">
-          {[...Array(3)].map((_, i) => (
-            <motion.div
-              key={i}
-              className={`w-3 h-3 rounded-full ${
-                i < attemptsLeft ? 'bg-orange-500' : 'bg-muted'
-              }`}
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: i * 0.1 }}
-            />
-          ))}
-        </div>
-      </div>
     </div>
   )
 }
+
+export { GuessInput }
+export default GuessInput

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 
 interface HomePageProps {
-  onSelectMode: (mode: 'college' | 'stats') => void
+  onSelectMode: (mode: 'college' | 'country' | 'stats') => void
 }
 
 // Clean SVG icon for College & Country mode — mortarboard / globe hybrid
@@ -50,8 +50,14 @@ export function HomePage({ onSelectMode }: HomePageProps) {
     {
       id: 'college' as const,
       icon: <CollegeIcon />,
-      title: 'College & Country',
-      description: 'Identify the team from player colleges and nationalities',
+      title: 'College',
+      description: 'Identify the team from player college logos',
+    },
+    {
+      id: 'country' as const,
+      icon: <CollegeIcon />,
+      title: 'Country',
+      description: 'Identify the team from player national flags',
     },
     {
       id: 'stats' as const,

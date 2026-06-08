@@ -6,13 +6,16 @@ import confetti from 'canvas-confetti'
 import { BasketballCourt } from '@/components/basketball-court'
 import { PlayerCard } from '@/components/player-card'
 import { GuessInput } from '@/components/guess-input'
-import { COLLEGE_PUZZLE, getHint, type Hint } from '@/lib/game-data'
+import { getHint, getYearHint, type DailyPuzzle, type Hint } from '@/lib/game-data'
 import Image from 'next/image'
 
 type GameState = 'playing' | 'won' | 'lost'
 
+type GameMode = 'college' | 'country'
+
 interface StartingFiveGameProps {
   onBack: () => void
+  mode: GameMode
 }
 
 function HomeIcon() {
@@ -38,18 +41,44 @@ function FlameIcon() {
   )
 }
 
-export function StartingFiveGame({ onBack }: StartingFiveGameProps) {
+export function StartingFiveGame({ onBack, mode }: StartingFiveGameProps) {
   const [gameState, setGameState] = useState<GameState>('playing')
-  const [attempts, setAttempts] = useState<string[]>([])
+  const [attempts, setAttempts] = useState<{ team: string; year: string }[]>([])
   const [hints, setHints] = useState<Hint[]>([])
   const [streak, setStreak] = useState(0)
-  const puzzle = COLLEGE_PUZZLE
+  const [puzzle, setPuzzle] = useState<DailyPuzzle | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const attemptsLeft = 3 - attempts.length
 
   useEffect(() => {
     const savedStreak = localStorage.getItem('starting5-streak')
     if (savedStreak) setStreak(parseInt(savedStreak, 10))
   }, [])
+
+  const loadPuzzle = useCallback(async () => {
+    try {
+      setLoadError(null)
+      const response = await fetch(`/api/puzzle?mode=${mode}`, {
+        cache: 'no-store',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to load puzzle')
+      }
+
+      const data = (await response.json()) as DailyPuzzle
+      setPuzzle(data)
+      setGameState('playing')
+      setAttempts([])
+      setHints([])
+    } catch {
+      setLoadError('Unable to load today\'s puzzle.')
+    }
+  }, [mode])
+
+  useEffect(() => {
+    void loadPuzzle()
+  }, [loadPuzzle])
 
   const fireConfetti = useCallback(() => {
     const duration = 3000
@@ -62,11 +91,12 @@ export function StartingFiveGame({ onBack }: StartingFiveGameProps) {
     frame()
   }, [])
 
-  const handleGuess = useCallback((teamName: string) => {
-    if (gameState !== 'playing') return
+  const handleGuess = useCallback((teamName: string, season: string) => {
+    if (gameState !== 'playing' || !puzzle) return
     const correctTeamFull = `${puzzle.teamCity} ${puzzle.teamName}`
+    const correctSeason = puzzle.season ?? ''
 
-    if (teamName === correctTeamFull) {
+    if (teamName === correctTeamFull && season === correctSeason) {
       setGameState('won')
       const newStreak = streak + 1
       setStreak(newStreak)
@@ -75,9 +105,19 @@ export function StartingFiveGame({ onBack }: StartingFiveGameProps) {
       return
     }
 
-    const newAttempts = [...attempts, teamName]
+    const newAttempt = { team: teamName, year: season }
+    const newAttempts = [...attempts, newAttempt]
     setAttempts(newAttempts)
-    const hint = getHint(teamName, correctTeamFull, puzzle.conference, puzzle.division)
+
+    let hint: Hint
+    if (teamName === correctTeamFull) {
+      const yh = getYearHint(season, correctSeason)
+      hint = { type: yh.type, message: `Correct team! ${yh.message}` }
+    } else {
+      const th = getHint(teamName, correctTeamFull, puzzle.conference, puzzle.division)
+      const yh = getYearHint(season, correctSeason)
+      hint = { type: th.type, message: `${th.message} · ${yh.message}` }
+    }
     setHints([...hints, hint])
 
     if (newAttempts.length >= 3) {
@@ -86,6 +126,36 @@ export function StartingFiveGame({ onBack }: StartingFiveGameProps) {
       localStorage.setItem('starting5-streak', '0')
     }
   }, [gameState, attempts, hints, puzzle, streak, fireConfetti])
+
+  const modeLabel = mode === 'college' ? 'College' : 'Country'
+
+  if (!puzzle && !loadError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="rounded-2xl border border-border bg-card px-6 py-5 text-center shadow-lg">
+          <p className="text-sm font-medium text-foreground">Loading today&apos;s puzzle...</p>
+          <p className="mt-1 text-xs text-muted-foreground">Reading the local NBA dataset</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="max-w-sm rounded-2xl border border-border bg-card px-6 py-5 text-center shadow-lg">
+          <p className="text-sm font-semibold text-foreground">{loadError}</p>
+          <button
+            type="button"
+            onClick={() => void loadPuzzle()}
+            className="mt-4 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   const isRevealed = gameState === 'won' || gameState === 'lost'
 
@@ -125,8 +195,13 @@ export function StartingFiveGame({ onBack }: StartingFiveGameProps) {
               className="text-[11px] font-semibold tracking-widest uppercase mt-1"
               style={{ color: 'oklch(0.55 0 0)' }}
             >
-              College &amp; Country
+              {modeLabel} Mode
             </span>
+            {isRevealed && puzzle.season && (
+              <span className="mt-1 text-[10px] font-semibold tracking-[0.2em] uppercase text-muted-foreground">
+                {puzzle.season}
+              </span>
+            )}
           </div>
 
           {/* Streak pill */}
@@ -154,7 +229,7 @@ export function StartingFiveGame({ onBack }: StartingFiveGameProps) {
           <BasketballCourt>
             {puzzle.players.map((player, index) => (
               <PlayerCard
-                key={player.position}
+                key={`${player.position}-${player.name}`}
                 player={player}
                 clueMode={puzzle.clueMode}
                 isRevealed={isRevealed}
@@ -187,7 +262,7 @@ export function StartingFiveGame({ onBack }: StartingFiveGameProps) {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <span className="font-medium text-foreground">{attempt}</span>
+                  <span className="font-medium text-foreground">{attempt.team} · {attempt.year}</span>
                   <span className="text-muted-foreground">{hints[index]?.message}</span>
                 </motion.div>
               ))}
@@ -284,6 +359,9 @@ export function StartingFiveGame({ onBack }: StartingFiveGameProps) {
                   >
                     <p className="text-xs text-muted-foreground">{puzzle.teamCity}</p>
                     <p className="text-lg sm:text-xl font-bold text-foreground">{puzzle.teamName}</p>
+                    {puzzle.season && (
+                      <p className="text-xs text-muted-foreground mt-0.5">{puzzle.season} season</p>
+                    )}
                   </motion.div>
                 </div>
               </div>
@@ -298,7 +376,7 @@ export function StartingFiveGame({ onBack }: StartingFiveGameProps) {
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}
         >
-          New puzzle every day at midnight
+          New {modeLabel.toLowerCase()} puzzle every day at midnight
         </motion.p>
       </div>
     </div>

@@ -4,9 +4,10 @@ import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { HomePage } from '@/components/home-page'
 import { StartingFiveGame } from '@/components/starting-five-game'
+import { CountryGame } from '@/components/country-game'
 import { StatsGame } from '@/components/stats-game'
 
-type Screen = 'home' | 'college' | 'stats'
+type Screen = 'home' | 'college' | 'country' | 'stats'
 
 export default function Page() {
   const [screen, setScreen] = useState<Screen>('home')
@@ -33,7 +34,19 @@ export default function Page() {
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
         >
-          <StartingFiveGame onBack={() => setScreen('home')} />
+          <StartingFiveGame onBack={() => setScreen('home')} mode="college" />
+        </motion.div>
+      )}
+
+      {screen === 'country' && (
+        <motion.div
+          key="country"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+          <CountryGame onBack={() => setScreen('home')} />
         </motion.div>
       )}
 

@@ -1,4 +1,6 @@
-export type ClueMode = 'college' | 'stats'
+import { NBA_TEAMS } from '@/lib/team-data'
+
+export type ClueMode = 'college' | 'country' | 'stats'
 
 export type Position = 'PG' | 'SG' | 'SF' | 'PF' | 'C'
 
@@ -13,14 +15,17 @@ export interface Player {
   position: Position
   college: string
   collegeLogo: string
+  collegeImage?: string
   stats: PlayerStats
   nationality: string
   nationalityCode: string // ISO 2-letter code for flagcdn
+  nationalityImage?: string
   headshotUrl: string
 }
 
 export interface DailyPuzzle {
   date: string
+  season?: string
   teamName: string
   teamCity: string
   teamLogo: string
@@ -34,40 +39,6 @@ export interface Hint {
   type: 'cold' | 'warm' | 'hot'
   message: string
 }
-
-// NBA Teams data for autocomplete
-export const NBA_TEAMS = [
-  { name: 'Atlanta Hawks', conference: 'Eastern', division: 'Southeast' },
-  { name: 'Boston Celtics', conference: 'Eastern', division: 'Atlantic' },
-  { name: 'Brooklyn Nets', conference: 'Eastern', division: 'Atlantic' },
-  { name: 'Charlotte Hornets', conference: 'Eastern', division: 'Southeast' },
-  { name: 'Chicago Bulls', conference: 'Eastern', division: 'Central' },
-  { name: 'Cleveland Cavaliers', conference: 'Eastern', division: 'Central' },
-  { name: 'Dallas Mavericks', conference: 'Western', division: 'Southwest' },
-  { name: 'Denver Nuggets', conference: 'Western', division: 'Northwest' },
-  { name: 'Detroit Pistons', conference: 'Eastern', division: 'Central' },
-  { name: 'Golden State Warriors', conference: 'Western', division: 'Pacific' },
-  { name: 'Houston Rockets', conference: 'Western', division: 'Southwest' },
-  { name: 'Indiana Pacers', conference: 'Eastern', division: 'Central' },
-  { name: 'LA Clippers', conference: 'Western', division: 'Pacific' },
-  { name: 'Los Angeles Lakers', conference: 'Western', division: 'Pacific' },
-  { name: 'Memphis Grizzlies', conference: 'Western', division: 'Southwest' },
-  { name: 'Miami Heat', conference: 'Eastern', division: 'Southeast' },
-  { name: 'Milwaukee Bucks', conference: 'Eastern', division: 'Central' },
-  { name: 'Minnesota Timberwolves', conference: 'Western', division: 'Northwest' },
-  { name: 'New Orleans Pelicans', conference: 'Western', division: 'Southwest' },
-  { name: 'New York Knicks', conference: 'Eastern', division: 'Atlantic' },
-  { name: 'Oklahoma City Thunder', conference: 'Western', division: 'Northwest' },
-  { name: 'Orlando Magic', conference: 'Eastern', division: 'Southeast' },
-  { name: 'Philadelphia 76ers', conference: 'Eastern', division: 'Atlantic' },
-  { name: 'Phoenix Suns', conference: 'Western', division: 'Pacific' },
-  { name: 'Portland Trail Blazers', conference: 'Western', division: 'Northwest' },
-  { name: 'Sacramento Kings', conference: 'Western', division: 'Pacific' },
-  { name: 'San Antonio Spurs', conference: 'Western', division: 'Southwest' },
-  { name: 'Toronto Raptors', conference: 'Eastern', division: 'Atlantic' },
-  { name: 'Utah Jazz', conference: 'Western', division: 'Northwest' },
-  { name: 'Washington Wizards', conference: 'Eastern', division: 'Southeast' },
-]
 
 // Shared player data — Boston Celtics starting 5
 const CELTICS_PLAYERS: Player[] = [
@@ -135,7 +106,7 @@ export const COLLEGE_PUZZLE: DailyPuzzle = {
   players: CELTICS_PLAYERS,
 }
 
-// Stats mode puzzle — same team, stats clue mode
+// Stats mode puzzle — stats clue mode
 export const STATS_PUZZLE: DailyPuzzle = {
   date: '2026-06-04',
   teamName: 'Celtics',
@@ -150,6 +121,26 @@ export const STATS_PUZZLE: DailyPuzzle = {
 // Legacy export — keep compatible
 export const TODAYS_PUZZLE = COLLEGE_PUZZLE
 
+export function getYearDiff(guessedYear: string, correctYear: string): number {
+  const guessedStart = parseInt(guessedYear.split('-')[0], 10)
+  const correctStart = parseInt(correctYear.split('-')[0], 10)
+  return Math.abs(guessedStart - correctStart)
+}
+
+export function getYearHint(guessedYear: string, correctYear: string): Hint {
+  const diff = getYearDiff(guessedYear, correctYear)
+  if (diff === 0) {
+    return { type: 'hot', message: 'Correct year!' }
+  }
+  if (diff === 1) {
+    return { type: 'hot', message: 'Very close — off by 1 season' }
+  }
+  if (diff <= 3) {
+    return { type: 'warm', message: `Off by ${diff} seasons` }
+  }
+  return { type: 'cold', message: `Off by ${diff} seasons` }
+}
+
 export function getHint(
   guessedTeam: string,
   correctTeam: string,
@@ -163,12 +154,21 @@ export function getHint(
   }
 
   if (guessed.division === correctDivision) {
-    return { type: 'hot', message: '🔥 Same division!' }
+    return { type: 'hot', message: 'Same division!' }
   }
 
   if (guessed.conference === correctConference) {
-    return { type: 'warm', message: '🌡️ Warmer — same conference!' }
+    return { type: 'warm', message: 'Warmer — same conference!' }
   }
 
-  return { type: 'cold', message: '❄️ Cold — wrong conference' }
+  return { type: 'cold', message: 'Wrong conference' }
 }
+
+export const ALL_SEASONS: string[] = [
+  "1983-84", "1984-85", "1985-86", "1986-87", "1987-88", "1988-89", "1989-90",
+  "1990-91", "1991-92", "1992-93", "1993-94", "1994-95", "1995-96",
+  "1996-97", "1997-98", "1998-99", "1999-00",
+  "2000-01", "2001-02", "2002-03", "2003-04", "2004-05", "2005-06", "2006-07", "2007-08", "2008-09",
+  "2009-10", "2010-11", "2011-12", "2012-13", "2013-14", "2014-15", "2015-16", "2016-17", "2017-18", "2018-19",
+  "2019-20", "2020-21", "2021-22", "2022-23", "2023-24", "2024-25", "2025-26",
+]
