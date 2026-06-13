@@ -5,8 +5,6 @@ import { resolveCollegeImage } from '@/lib/college-logos'
 import { TEAM_BY_ABBREVIATION, TEAM_INFO } from '@/lib/team-data'
 import type { ClueMode, DailyPuzzle, Player, Position } from '@/lib/game-data'
 
-const sqlJsDirectory = path.join(process.cwd(), 'node_modules', 'sql.js', 'dist')
-
 const POSITION_ORDER: Record<Position, number> = {
   PG: 0,
   SG: 1,
@@ -180,10 +178,9 @@ function buildPlayer(row: Record<string, unknown>): Player {
 async function getSqlJs() {
   if (!sqlJsPromise) {
     sqlJsPromise = initSqlJs({
-      locateFile: (file) => path.join(sqlJsDirectory, file),
+      locateFile: () => '/sql-wasm.wasm',
     })
   }
-
   return sqlJsPromise
 }
 
