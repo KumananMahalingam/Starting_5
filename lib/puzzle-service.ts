@@ -177,8 +177,11 @@ function buildPlayer(row: Record<string, unknown>): Player {
 
 async function getSqlJs() {
   if (!sqlJsPromise) {
+    const wasmBuffer = await readFile(
+      path.join(process.cwd(), 'public', 'sql-wasm.wasm')
+    )
     sqlJsPromise = initSqlJs({
-      locateFile: () => '/sql-wasm.wasm',
+      wasmBinary: wasmBuffer,
     })
   }
   return sqlJsPromise
