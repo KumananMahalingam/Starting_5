@@ -7,15 +7,22 @@ import { BasketballCourt } from '@/components/basketball-court'
 import { PlayerCard } from '@/components/player-card'
 import { GuessInput } from '@/components/guess-input'
 import { getHint, getYearHint, type DailyPuzzle, type Hint } from '@/lib/game-data'
+import {
+  getModeState,
+  getPlayStreak,
+  recordModeComplete,
+  saveModeProgress,
+  type GameMode,
+} from '@/lib/daily-progress'
 import Image from 'next/image'
 
 type GameState = 'playing' | 'won' | 'lost'
 
-type GameMode = 'college' | 'country'
+type GameModeProp = Extract<GameMode, 'college' | 'country'>
 
 interface StartingFiveGameProps {
   onBack: () => void
-  mode: GameMode
+  mode: GameModeProp
 }
 
 function HomeIcon() {
@@ -51,8 +58,7 @@ export function StartingFiveGame({ onBack, mode }: StartingFiveGameProps) {
   const attemptsLeft = 3 - attempts.length
 
   useEffect(() => {
-    const savedStreak = localStorage.getItem('starting5-streak')
-    if (savedStreak) setStreak(parseInt(savedStreak, 10))
+    setStreak(getPlayStreak())
   }, [])
 
   const loadPuzzle = useCallback(async () => {
@@ -68,9 +74,18 @@ export function StartingFiveGame({ onBack, mode }: StartingFiveGameProps) {
 
       const data = (await response.json()) as DailyPuzzle
       setPuzzle(data)
-      setGameState('playing')
-      setAttempts([])
-      setHints([])
+
+      const saved = getModeState(mode)
+      if (saved) {
+        setAttempts(saved.attempts)
+        setHints(saved.hints)
+        setGameState(saved.status === 'playing' ? 'playing' : saved.status)
+      } else {
+        setGameState('playing')
+        setAttempts([])
+        setHints([])
+      }
+      setStreak(getPlayStreak())
     } catch {
       setLoadError('Unable to load today\'s puzzle.')
     }
@@ -98,9 +113,13 @@ export function StartingFiveGame({ onBack, mode }: StartingFiveGameProps) {
 
     if (teamName === correctTeamFull && season === correctSeason) {
       setGameState('won')
-      const newStreak = streak + 1
+      const finalAttempts = [...attempts, { team: teamName, year: season }]
+      const newStreak = recordModeComplete(mode, {
+        status: 'won',
+        attempts: finalAttempts,
+        hints,
+      })
       setStreak(newStreak)
-      localStorage.setItem('starting5-streak', newStreak.toString())
       fireConfetti()
       return
     }
@@ -118,14 +137,25 @@ export function StartingFiveGame({ onBack, mode }: StartingFiveGameProps) {
       const yh = getYearHint(season, correctSeason)
       hint = { type: th.type, message: `${th.message} · ${yh.message}` }
     }
-    setHints([...hints, hint])
+    const newHints = [...hints, hint]
+    setHints(newHints)
 
     if (newAttempts.length >= 3) {
       setGameState('lost')
-      setStreak(0)
-      localStorage.setItem('starting5-streak', '0')
+      const newStreak = recordModeComplete(mode, {
+        status: 'lost',
+        attempts: newAttempts,
+        hints: newHints,
+      })
+      setStreak(newStreak)
+    } else {
+      saveModeProgress(mode, {
+        status: 'playing',
+        attempts: newAttempts,
+        hints: newHints,
+      })
     }
-  }, [gameState, attempts, hints, puzzle, streak, fireConfetti])
+  }, [gameState, attempts, hints, puzzle, mode, fireConfetti])
 
   const modeLabel = mode === 'college' ? 'College' : 'Country'
 

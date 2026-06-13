@@ -7,6 +7,12 @@ import { BasketballCourt } from '@/components/basketball-court'
 import { StatsPlayerCard } from '@/components/stats-player-card'
 import { GuessInput } from '@/components/guess-input'
 import { getHint, getYearHint, type DailyPuzzle, type Hint } from '@/lib/game-data'
+import {
+  getModeState,
+  getPlayStreak,
+  recordModeComplete,
+  saveModeProgress,
+} from '@/lib/daily-progress'
 import Image from 'next/image'
 
 type GameState = 'playing' | 'won' | 'lost'
@@ -48,8 +54,7 @@ export function StatsGame({ onBack }: StatsGameProps) {
   const attemptsLeft = 3 - attempts.length
 
   useEffect(() => {
-    const savedStreak = localStorage.getItem('starting5-streak')
-    if (savedStreak) setStreak(parseInt(savedStreak, 10))
+    setStreak(getPlayStreak())
   }, [])
 
   const loadPuzzle = useCallback(async () => {
@@ -65,9 +70,18 @@ export function StatsGame({ onBack }: StatsGameProps) {
 
       const data = (await response.json()) as DailyPuzzle
       setPuzzle(data)
-      setGameState('playing')
-      setAttempts([])
-      setHints([])
+
+      const saved = getModeState('stats')
+      if (saved) {
+        setAttempts(saved.attempts)
+        setHints(saved.hints)
+        setGameState(saved.status === 'playing' ? 'playing' : saved.status)
+      } else {
+        setGameState('playing')
+        setAttempts([])
+        setHints([])
+      }
+      setStreak(getPlayStreak())
     } catch {
       setLoadError('Unable to load today\'s puzzle.')
     }
@@ -95,9 +109,13 @@ export function StatsGame({ onBack }: StatsGameProps) {
 
     if (teamName === correctTeamFull && season === correctSeason) {
       setGameState('won')
-      const newStreak = streak + 1
+      const finalAttempts = [...attempts, { team: teamName, year: season }]
+      const newStreak = recordModeComplete('stats', {
+        status: 'won',
+        attempts: finalAttempts,
+        hints,
+      })
       setStreak(newStreak)
-      localStorage.setItem('starting5-streak', newStreak.toString())
       fireConfetti()
       return
     }
@@ -115,14 +133,25 @@ export function StatsGame({ onBack }: StatsGameProps) {
       const yh = getYearHint(season, correctSeason)
       hint = { type: th.type, message: `${th.message} · ${yh.message}` }
     }
-    setHints([...hints, hint])
+    const newHints = [...hints, hint]
+    setHints(newHints)
 
     if (newAttempts.length >= 3) {
       setGameState('lost')
-      setStreak(0)
-      localStorage.setItem('starting5-streak', '0')
+      const newStreak = recordModeComplete('stats', {
+        status: 'lost',
+        attempts: newAttempts,
+        hints: newHints,
+      })
+      setStreak(newStreak)
+    } else {
+      saveModeProgress('stats', {
+        status: 'playing',
+        attempts: newAttempts,
+        hints: newHints,
+      })
     }
-  }, [gameState, attempts, hints, puzzle, streak, fireConfetti])
+  }, [gameState, attempts, hints, puzzle, fireConfetti])
 
   if (!puzzle && !loadError) {
     return (
@@ -323,11 +352,6 @@ export function StatsGame({ onBack }: StatsGameProps) {
             </motion.div>
           )}
         </motion.div>
-
-        {/* ── Footer ── */}
-        <motion.p className="text-center text-xs text-muted-foreground mt-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}>
-          New puzzle every day at midnight
-        </motion.p>
 
       </div>
     </div>

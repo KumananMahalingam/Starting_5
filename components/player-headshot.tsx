@@ -4,34 +4,66 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { BasketballIcon } from '@/components/basketball-icon'
 
-interface PlayerHeadshotProps {
+interface PlayerRevealCardProps {
   name: string
   headshotUrl: string
   size?: 'sm' | 'md'
 }
 
-export function PlayerHeadshot({ name, headshotUrl, size = 'md' }: PlayerHeadshotProps) {
+function HeadshotImage({
+  name,
+  headshotUrl,
+  failed,
+  onError,
+}: {
+  name: string
+  headshotUrl: string
+  failed: boolean
+  onError: () => void
+}) {
+  if (!headshotUrl || failed) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <BasketballIcon size={36} />
+      </div>
+    )
+  }
+
+  return (
+    <Image
+      src={headshotUrl}
+      alt={name}
+      fill
+      sizes="84px"
+      className="object-cover object-[50%_12%] scale-[1.18] origin-[50%_12%]"
+      unoptimized
+      onError={onError}
+    />
+  )
+}
+
+export function PlayerRevealCard({ name, headshotUrl, size = 'sm' }: PlayerRevealCardProps) {
   const [failed, setFailed] = useState(false)
-  const boxClass = size === 'sm' ? 'w-14 h-14 sm:w-16 sm:h-16' : 'w-16 h-16 sm:w-20 sm:h-20'
-  const iconSize = size === 'sm' ? 56 : 64
+  const widthClass = size === 'sm' ? 'w-[76px] sm:w-[84px]' : 'w-[84px] sm:w-[96px]'
 
   return (
     <div
-      className={`relative ${boxClass} rounded-full overflow-hidden bg-muted ring-2 flex items-center justify-center`}
-      style={{ outline: '2px solid oklch(0.70 0.18 45)' }}
+      className={`${widthClass} flex flex-col overflow-hidden rounded-xl bg-card shadow-lg shadow-black/40`}
+      style={{ border: '2px solid oklch(0.70 0.18 45 / 0.65)' }}
     >
-      {headshotUrl && !failed ? (
-        <Image
-          src={headshotUrl}
-          alt={name}
-          fill
-          className="object-cover object-top scale-150"
-          unoptimized
+      <div className="relative aspect-square w-full overflow-hidden bg-muted">
+        <HeadshotImage
+          name={name}
+          headshotUrl={headshotUrl}
+          failed={failed}
           onError={() => setFailed(true)}
         />
-      ) : (
-        <BasketballIcon size={iconSize * 0.65} />
-      )}
+      </div>
+      <div className="flex min-h-[30px] w-full items-center justify-center bg-card px-1 py-1.5">
+        <span className="line-clamp-2 text-center text-[8px] font-semibold leading-tight text-foreground sm:text-[9px]">
+          {name}
+        </span>
+      </div>
     </div>
   )
 }
