@@ -13,17 +13,46 @@ interface HomePageProps {
   onSelectMode: (mode: 'college' | 'country' | 'stats') => void
 }
 
-// Clean SVG icon for College & Country mode — mortarboard / globe hybrid
+// Mortarboard icon for College mode
 function CollegeIcon() {
   return (
     <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Globe outline */}
+      {/* Cap top */}
+      <path
+        d="M3 11L13 6L23 11L13 16L3 11Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+        fill="currentColor"
+        fillOpacity="0.15"
+      />
+      {/* Cap base / headband */}
+      <path
+        d="M6 13V17C6 18.5 9 20 13 20C17 20 20 18.5 20 17V13"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Tassel */}
+      <path
+        d="M23 11V16"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <circle cx="23" cy="17.5" r="1.5" fill="currentColor" />
+    </svg>
+  )
+}
+
+// Globe icon for Country mode
+function CountryIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="13" cy="13" r="10" stroke="currentColor" strokeWidth="1.7" />
-      {/* Latitude lines */}
       <ellipse cx="13" cy="13" rx="4.5" ry="10" stroke="currentColor" strokeWidth="1.7" />
-      {/* Horizontal band */}
       <line x1="3" y1="13" x2="23" y2="13" stroke="currentColor" strokeWidth="1.7" />
-      {/* Location pin dot */}
       <circle cx="13" cy="7.5" r="2" fill="currentColor" />
     </svg>
   )
@@ -72,7 +101,7 @@ export function HomePage({ onSelectMode }: HomePageProps) {
     },
     {
       id: 'country' as const,
-      icon: <CollegeIcon />,
+      icon: <CountryIcon />,
       title: 'Country',
       description: 'Identify the team from player national flags',
     },
