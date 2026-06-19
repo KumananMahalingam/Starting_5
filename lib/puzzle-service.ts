@@ -191,11 +191,14 @@ export async function getDailyPuzzle(mode: ClueMode, referenceDate = new Date())
   const sqlJs = await getSqlJs()
   const dbBuffer = await readFile(path.join(process.cwd(), 'thing.db'))
   const database = new sqlJs.Database(new Uint8Array(dbBuffer))
+  const nationalityFilter =
+    mode === 'country' ? `AND COUNT(DISTINCT CASE WHEN nationality NOT IN ('', 'Unknown') THEN nationality END) >= 3` : ''
+
   const teamRows = database.exec(`
     SELECT DISTINCT team, season
     FROM starters
     GROUP BY season, team
-    HAVING COUNT(*) = 5 AND COUNT(DISTINCT position) = 5
+    HAVING COUNT(*) = 5 AND COUNT(DISTINCT position) = 5 ${nationalityFilter}
     ORDER BY season, team
   `)[0]
 
