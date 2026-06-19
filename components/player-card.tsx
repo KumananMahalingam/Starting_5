@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import type { Player, ClueMode, Position } from '@/lib/game-data'
 import { ClueImage } from '@/components/clue-image'
-import { PlayerHeadshot } from '@/components/player-headshot'
+import { PlayerRevealCard } from '@/components/player-headshot'
 
 interface PlayerCardProps {
   player: Player
@@ -13,11 +13,11 @@ interface PlayerCardProps {
 }
 
 const POSITION_COORDS: Record<Position, { top: string; left: string }> = {
-  PG: { top: '18%', left: '50%' },
+  PG: { top: '22%', left: '50%' },
   SG: { top: '25%', left: '15%' },
   SF: { top: '25%', left: '85%' },
   PF: { top: '65%', left: '22%' },
-  C:  { top: '72%', left: '50%' },
+  C:  { top: '67%', left: '50%' },
 }
 
 function hasCollege(player: Player) {
@@ -36,15 +36,11 @@ export function PlayerCard({ player, clueMode, isRevealed, delay = 0 }: PlayerCa
     if (isRevealed) {
       return (
         <motion.div
-          className="flex flex-col items-center"
           initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.35 }}
         >
-          <PlayerHeadshot name={player.name} headshotUrl={player.headshotUrl} size="sm" />
-          <span className="text-[10px] sm:text-xs font-medium text-foreground mt-1.5 text-center max-w-[90px] leading-tight">
-            {player.name}
-          </span>
+          <PlayerRevealCard name={player.name} headshotUrl={player.headshotUrl} size="sm" />
         </motion.div>
       )
     }
@@ -116,17 +112,11 @@ export function PlayerCard({ player, clueMode, isRevealed, delay = 0 }: PlayerCa
       </motion.div>
 
       <motion.div
-        className={`
-          relative rounded-full
-          bg-card
-          flex items-center justify-center
-          shadow-lg shadow-black/40
-          ring-2 ring-orange-500/60
-          ${isRevealed
-            ? 'w-auto h-auto min-w-[80px] min-h-[88px] sm:min-w-[90px] sm:min-h-[96px] rounded-2xl p-2'
-            : 'w-16 h-16 sm:w-20 sm:h-20'
-          }
-        `}
+        className={
+          isRevealed
+            ? 'relative flex items-center justify-center'
+            : 'relative flex h-16 w-16 items-center justify-center rounded-full bg-card shadow-lg shadow-black/40 ring-2 ring-orange-500/60 sm:h-20 sm:w-20'
+        }
         whileHover={{ scale: 1.05 }}
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
         layout

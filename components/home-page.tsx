@@ -2,22 +2,57 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import {
+  getModeState,
+  getPlayStreak,
+  getTodayCompletedCount,
+  type GameMode,
+} from '@/lib/daily-progress'
 
 interface HomePageProps {
   onSelectMode: (mode: 'college' | 'country' | 'stats') => void
 }
 
-// Clean SVG icon for College & Country mode — mortarboard / globe hybrid
+// Mortarboard icon for College mode
 function CollegeIcon() {
   return (
     <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Globe outline */}
+      {/* Cap top */}
+      <path
+        d="M3 11L13 6L23 11L13 16L3 11Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+        fill="currentColor"
+        fillOpacity="0.15"
+      />
+      {/* Cap base / headband */}
+      <path
+        d="M6 13V17C6 18.5 9 20 13 20C17 20 20 18.5 20 17V13"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Tassel */}
+      <path
+        d="M23 11V16"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <circle cx="23" cy="17.5" r="1.5" fill="currentColor" />
+    </svg>
+  )
+}
+
+// Globe icon for Country mode
+function CountryIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="13" cy="13" r="10" stroke="currentColor" strokeWidth="1.7" />
-      {/* Latitude lines */}
       <ellipse cx="13" cy="13" rx="4.5" ry="10" stroke="currentColor" strokeWidth="1.7" />
-      {/* Horizontal band */}
       <line x1="3" y1="13" x2="23" y2="13" stroke="currentColor" strokeWidth="1.7" />
-      {/* Location pin dot */}
       <circle cx="13" cy="7.5" r="2" fill="currentColor" />
     </svg>
   )
@@ -39,11 +74,22 @@ function StatsIcon() {
 
 export function HomePage({ onSelectMode }: HomePageProps) {
   const [streak, setStreak] = useState(0)
+  const [completedToday, setCompletedToday] = useState(0)
+  const [modeStatus, setModeStatus] = useState<Record<GameMode, 'new' | 'playing' | 'won' | 'lost'>>({
+    college: 'new',
+    country: 'new',
+    stats: 'new',
+  })
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
 
   useEffect(() => {
-    const savedStreak = localStorage.getItem('starting5-streak')
-    if (savedStreak) setStreak(parseInt(savedStreak, 10))
+    setStreak(getPlayStreak())
+    setCompletedToday(getTodayCompletedCount())
+    setModeStatus({
+      college: getModeState('college')?.status ?? 'new',
+      country: getModeState('country')?.status ?? 'new',
+      stats: getModeState('stats')?.status ?? 'new',
+    })
   }, [])
 
   const modes = [
@@ -55,7 +101,7 @@ export function HomePage({ onSelectMode }: HomePageProps) {
     },
     {
       id: 'country' as const,
-      icon: <CollegeIcon />,
+      icon: <CountryIcon />,
       title: 'Country',
       description: 'Identify the team from player national flags',
     },
@@ -66,6 +112,14 @@ export function HomePage({ onSelectMode }: HomePageProps) {
       description: 'Identify the team from player statistics only',
     },
   ]
+
+  const getModeAction = (id: GameMode) => {
+    const status = modeStatus[id]
+    if (status === 'won') return { label: 'View result', done: true, outcome: 'won' as const }
+    if (status === 'lost') return { label: 'View result', done: true, outcome: 'lost' as const }
+    if (status === 'playing') return { label: 'Continue', done: false, outcome: null }
+    return { label: 'Play', done: false, outcome: null }
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden">
@@ -89,7 +143,7 @@ export function HomePage({ onSelectMode }: HomePageProps) {
       </svg>
 
       <motion.div
-        className="relative z-10 flex flex-col items-center max-w-2xl w-full"
+        className="relative z-10 flex flex-col items-center max-w-5xl w-full"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
@@ -138,8 +192,10 @@ export function HomePage({ onSelectMode }: HomePageProps) {
         </motion.div>
 
         {/* Mode Cards — equal height via grid + h-full */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full mb-10 items-stretch">
-          {modes.map((mode, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full mb-10 items-stretch">
+          {modes.map((mode, i) => {
+            const action = getModeAction(mode.id)
+            return (
             <motion.div
               key={mode.id}
               className="flex"
@@ -156,7 +212,11 @@ export function HomePage({ onSelectMode }: HomePageProps) {
                   background: hoveredCard === mode.id
                     ? 'oklch(0.22 0.01 30)'
                     : 'oklch(0.18 0.01 30)',
-                  borderColor: hoveredCard === mode.id
+                  borderColor: action.outcome === 'won'
+                    ? 'oklch(0.55 0.15 145 / 0.5)'
+                    : action.outcome === 'lost'
+                    ? 'oklch(0.55 0.22 25 / 0.5)'
+                    : hoveredCard === mode.id
                     ? 'oklch(0.70 0.18 45 / 0.5)'
                     : 'oklch(0.30 0.01 30)',
                   minHeight: '220px',
@@ -190,26 +250,47 @@ export function HomePage({ onSelectMode }: HomePageProps) {
 
                 {/* Text */}
                 <div className="flex-1">
-                  <h2 className="text-xl font-bold text-foreground mb-1">{mode.title}</h2>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h2 className="text-xl font-bold text-foreground">{mode.title}</h2>
+                    {action.outcome && (
+                      <span
+                        className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
+                        style={{
+                          background: action.outcome === 'won'
+                            ? 'oklch(0.55 0.15 145 / 0.2)'
+                            : 'oklch(0.55 0.22 25 / 0.2)',
+                          color: action.outcome === 'won'
+                            ? 'oklch(0.65 0.18 145)'
+                            : 'oklch(0.65 0.22 25)',
+                        }}
+                      >
+                        {action.outcome === 'won' ? 'Won' : 'Lost'}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-muted-foreground text-sm leading-relaxed">{mode.description}</p>
                 </div>
 
-                {/* Play button — always at bottom */}
+                {/* Action button — always at bottom */}
                 <div
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm self-start flex-shrink-0"
                   style={{
-                    background: 'oklch(0.70 0.18 45)',
-                    color: 'oklch(0.10 0.01 30)',
+                    background: action.done
+                      ? 'oklch(0.25 0.01 30)'
+                      : 'oklch(0.70 0.18 45)',
+                    color: action.done ? 'oklch(0.75 0 0)' : 'oklch(0.10 0.01 30)',
+                    border: action.done ? '1px solid oklch(0.35 0.01 30)' : 'none',
                   }}
                 >
-                  Play
+                  {action.label}
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
                     <path d="M3.5 1.5L9.5 6L3.5 10.5V1.5Z" />
                   </svg>
                 </div>
               </motion.button>
             </motion.div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Footer */}
@@ -241,8 +322,9 @@ export function HomePage({ onSelectMode }: HomePageProps) {
               {streak} day streak
             </span>
           </div>
-
-          <p className="text-xs text-muted-foreground">New puzzle every day at midnight</p>
+          <p className="text-xs text-muted-foreground">
+            {completedToday}/3 puzzles played today · New puzzles at midnight
+          </p>
         </motion.div>
       </motion.div>
     </div>

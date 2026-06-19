@@ -114,7 +114,7 @@ const GuessInput = ({ onGuess, disabled, attemptsLeft }: GuessInputProps) => {
   const teamInputDisabled = disabled || !year
 
   return (
-    <div className="relative w-full max-w-md mx-auto">
+    <div className="relative w-full mx-auto">
       <div className="flex gap-2">
         {/* Season dropdown — first */}
         <div className="relative w-[130px]" ref={yearRef}>
