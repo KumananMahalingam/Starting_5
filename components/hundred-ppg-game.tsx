@@ -388,20 +388,6 @@ export function HundredPpgGame({ onBack }: HundredPpgGameProps) {
     }
   }, [step])
 
-  // Undo the most recently locked position (frees its team back into the pool).
-  const undoLast = useCallback(() => {
-    const lastFilled = [...slots].map((s, i) => (s ? i : -1)).filter((i) => i >= 0).pop()
-    if (lastFilled === undefined) return
-    const nextSlots = [...slots]
-    nextSlots[lastFilled] = null
-    setSlots(nextSlots)
-    setLandedTeam(null)
-    setSpinFace(null)
-    setRoster(null)
-    setSelectedPlayer(null)
-    setStep('spin')
-  }, [slots])
-
   const replay = useCallback(() => {
     recordedRef.current = false
     setSlots([null, null, null, null, null])
@@ -652,16 +638,6 @@ export function HundredPpgGame({ onBack }: HundredPpgGameProps) {
                 </div>
 
                 {rosterError && <p className="mt-3 text-xs text-destructive">{rosterError}</p>}
-
-                {slots.some((s) => s !== null) && (
-                  <button
-                    type="button"
-                    onClick={undoLast}
-                    className="mt-4 text-xs text-muted-foreground underline-offset-2 hover:underline"
-                  >
-                    ← Undo last pick
-                  </button>
-                )}
               </motion.div>
             )}
 
