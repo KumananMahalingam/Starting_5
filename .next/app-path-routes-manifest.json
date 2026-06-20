@@ -1,0 +1,8 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/api/ppg/roster/route": "/api/ppg/roster",
+  "/api/ppg/teams/route": "/api/ppg/teams",
+  "/api/puzzle/route": "/api/puzzle",
+  "/page": "/"
+}

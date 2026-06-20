@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "functions": {
+    "/api/ppg/roster": {},
+    "/api/ppg/teams": {},
+    "/api/puzzle": {}
+  }
+}

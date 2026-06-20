@@ -1,0 +1,4 @@
+{
+  "/api/ppg/roster/route": "app/api/ppg/roster/route.js",
+  "/api/ppg/teams/route": "app/api/ppg/teams/route.js"
+}

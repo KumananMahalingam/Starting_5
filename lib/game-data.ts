@@ -40,6 +40,39 @@ export interface Hint {
   message: string
 }
 
+// ── 100 PPG mode types ──────────────────────────────────────────────
+// A franchise the user can spin onto. `abbreviation` is the dataset key
+// (e.g. "BOS"); each maps 1:1 to TEAM_INFO for the logo + display name.
+export interface FranchiseTeam {
+  abbreviation: string
+  city: string
+  name: string
+  fullName: string
+  logoUrl: string
+}
+
+// One season a player spent as a starter for a given franchise.
+export interface FranchiseSeason {
+  season: string
+  ppg: number
+  position: Position
+}
+
+// A player's all-time stint with a single franchise (may be non-contiguous
+// if they were traded away and re-acquired — seasons array holds the gaps).
+export interface FranchisePlayer {
+  name: string
+  headshotUrl: string
+  firstSeason: string
+  lastSeason: string
+  seasons: FranchiseSeason[]
+}
+
+export interface FranchiseRoster {
+  team: FranchiseTeam
+  players: FranchisePlayer[]
+}
+
 // Shared player data — Boston Celtics starting 5
 const CELTICS_PLAYERS: Player[] = [
   {

@@ -6,11 +6,12 @@ import {
   getModeState,
   getPlayStreak,
   getTodayCompletedCount,
+  getTotalModeCount,
   type GameMode,
 } from '@/lib/daily-progress'
 
 interface HomePageProps {
-  onSelectMode: (mode: 'college' | 'country' | 'stats') => void
+  onSelectMode: (mode: 'college' | 'country' | 'stats' | 'ppg') => void
 }
 
 // Mortarboard icon for College mode
@@ -58,7 +59,7 @@ function CountryIcon() {
   )
 }
 
-// Clean SVG icon for Stats mode — bar chart
+// Bar chart icon for Stats mode
 function StatsIcon() {
   return (
     <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -72,6 +73,17 @@ function StatsIcon() {
   )
 }
 
+// Target icon for 100 PPG mode
+function TargetIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="13" cy="13" r="10" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="13" cy="13" r="6" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="13" cy="13" r="2" fill="currentColor" />
+    </svg>
+  )
+}
+
 export function HomePage({ onSelectMode }: HomePageProps) {
   const [streak, setStreak] = useState(0)
   const [completedToday, setCompletedToday] = useState(0)
@@ -79,6 +91,7 @@ export function HomePage({ onSelectMode }: HomePageProps) {
     college: 'new',
     country: 'new',
     stats: 'new',
+    ppg: 'new',
   })
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
 
@@ -89,6 +102,7 @@ export function HomePage({ onSelectMode }: HomePageProps) {
       college: getModeState('college')?.status ?? 'new',
       country: getModeState('country')?.status ?? 'new',
       stats: getModeState('stats')?.status ?? 'new',
+      ppg: getModeState('ppg')?.status ?? 'new',
     })
   }, [])
 
@@ -110,6 +124,12 @@ export function HomePage({ onSelectMode }: HomePageProps) {
       icon: <StatsIcon />,
       title: 'Stats Mode',
       description: 'Identify the team from player statistics only',
+    },
+    {
+      id: 'ppg' as const,
+      icon: <TargetIcon />,
+      title: '100 PPG',
+      description: 'Build a 100-point starting five',
     },
   ]
 
@@ -143,7 +163,7 @@ export function HomePage({ onSelectMode }: HomePageProps) {
       </svg>
 
       <motion.div
-        className="relative z-10 flex flex-col items-center max-w-5xl w-full"
+        className="relative z-10 flex flex-col items-center max-w-6xl w-full"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
@@ -191,8 +211,8 @@ export function HomePage({ onSelectMode }: HomePageProps) {
           </p>
         </motion.div>
 
-        {/* Mode Cards — equal height via grid + h-full */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full mb-10 items-stretch">
+        {/* Mode Cards — 4-up on desktop, 2x2 on tablet, stacked on mobile */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full mb-10 items-stretch">
           {modes.map((mode, i) => {
             const action = getModeAction(mode.id)
             return (
@@ -323,7 +343,7 @@ export function HomePage({ onSelectMode }: HomePageProps) {
             </span>
           </div>
           <p className="text-xs text-muted-foreground">
-            {completedToday}/3 puzzles played today · New puzzles at midnight
+            {completedToday}/{getTotalModeCount()} puzzles played today · New puzzles at midnight
           </p>
         </motion.div>
       </motion.div>

@@ -6,8 +6,9 @@ import { HomePage } from '@/components/home-page'
 import { StartingFiveGame } from '@/components/starting-five-game'
 import { CountryGame } from '@/components/country-game'
 import { StatsGame } from '@/components/stats-game'
+import { HundredPpgGame } from '@/components/hundred-ppg-game'
 
-type Screen = 'home' | 'college' | 'country' | 'stats'
+type Screen = 'home' | 'college' | 'country' | 'stats' | 'ppg'
 
 export default function Page() {
   const [screen, setScreen] = useState<Screen>('home')
@@ -59,6 +60,18 @@ export default function Page() {
           transition={{ duration: 0.3 }}
         >
           <StatsGame onBack={() => setScreen('home')} />
+        </motion.div>
+      )}
+
+      {screen === 'ppg' && (
+        <motion.div
+          key="ppg"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+          <HundredPpgGame onBack={() => setScreen('home')} />
         </motion.div>
       )}
     </AnimatePresence>

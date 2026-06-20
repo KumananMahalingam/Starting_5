@@ -255,3 +255,142 @@ export async function getDailyPuzzle(mode: ClueMode, referenceDate = new Date())
     players: players.sort((left, right) => POSITION_ORDER[left.position] - POSITION_ORDER[right.position]),
   }
 }
+
+
+// ── 100 PPG mode data access ────────────────────────────────────────
+//
+// All data is sourced from the same local `thing.db` "starters" table the
+// daily puzzles use — no new external fetch logic. Each row is one
+// (season, team, player, position, pts_per_g) record, so a player's PPG is
+// already keyed by franchise. Trades/partial seasons are handled implicitly:
+// the dataset attributes each season's row to the team the player started for,
+// and pts_per_g is that player's scoring average for that season. We surface
+// the value as-is and label it by franchise; if a player split a season
+// between two teams the dataset only carries the franchise they started for.
+
+async function openDatabase() {
+  const sqlJs = await getSqlJs()
+  const dbBuffer = await readFile(path.join(process.cwd(), 'thing.db'))
+  return new sqlJs.Database(new Uint8Array(dbBuffer))
+}
+
+function resolveHeadshot(row: Record<string, unknown>): string {
+  const stored = String(row.headshot_url ?? '').trim()
+  return stored || createHeadshotUrl(String(row.player_name ?? ''), String(row.team ?? ''))
+}
+
+/**
+ * Franchises available to spin onto. Only teams present in the dataset that
+ * also have TEAM_INFO metadata (logo + display name) and at least a handful of
+ * players are returned, so the player list always renders gracefully.
+ *
+ * NOTE: the pool is keyed by the dataset's team abbreviations (40 of them,
+ * including relocated/renamed franchises like SEA, NJN, VAN). We treat each as
+ * a distinct franchise rather than collapsing relocations, so "no team twice"
+ * applies per abbreviation.
+ */
+export async function getFranchiseTeams() {
+  const database = await openDatabase()
+  const rows = database.exec(`
+    SELECT team, COUNT(DISTINCT player_name) AS players
+    FROM starters
+    GROUP BY team
+    HAVING players >= 5
+    ORDER BY team
+  `)[0]
+  database.close()
+
+  if (!rows) return []
+
+  const teams = rows.values
+    .map(([abbreviation]) => {
+      const abbr = normalizeTeamAbbreviation(String(abbreviation))
+      const meta = TEAM_BY_ABBREVIATION[abbr]
+      if (!meta) return null
+      return {
+        abbreviation: abbr,
+        city: meta.teamCity,
+        name: meta.teamName,
+        fullName: `${meta.teamCity} ${meta.teamName}`,
+        logoUrl: meta.logoUrl,
+      }
+    })
+    .filter((team): team is NonNullable<typeof team> => team !== null)
+
+  return teams
+}
+
+/**
+ * Full all-time starter roster for one franchise, each player carrying every
+ * season they started for that team (with that season's PPG). Players are
+ * ordered by peak PPG so the most recognizable scorers surface first.
+ */
+export async function getFranchiseRoster(teamAbbreviation: string) {
+  const database = await openDatabase()
+  const statement = database.prepare(`
+    SELECT player_name, position, season, pts_per_g, headshot_url, team
+    FROM starters
+    WHERE team = ?
+    ORDER BY player_name, season
+  `)
+  statement.bind([teamAbbreviation])
+
+  const byPlayer = new Map<
+    string,
+    {
+      name: string
+      headshotUrl: string
+      seasons: { season: string; ppg: number; position: string }[]
+    }
+  >()
+
+  while (statement.step()) {
+    const row = statement.getAsObject() as Record<string, unknown>
+    const name = String(row.player_name ?? '')
+    if (!name) continue
+
+    let entry = byPlayer.get(name)
+    if (!entry) {
+      entry = { name, headshotUrl: resolveHeadshot(row), seasons: [] }
+      byPlayer.set(name, entry)
+    }
+
+    entry.seasons.push({
+      season: String(row.season ?? ''),
+      ppg: Number(row.pts_per_g ?? 0),
+      position: String(row.position ?? ''),
+    })
+  }
+  statement.free()
+  database.close()
+
+  const players = Array.from(byPlayer.values())
+    .map((player) => {
+      const seasons = player.seasons.sort((a, b) => a.season.localeCompare(b.season))
+      const peakPpg = seasons.reduce((max, s) => Math.max(max, s.ppg), 0)
+      return {
+        name: player.name,
+        headshotUrl: player.headshotUrl,
+        firstSeason: seasons[0]?.season ?? '',
+        lastSeason: seasons[seasons.length - 1]?.season ?? '',
+        seasons,
+        peakPpg,
+      }
+    })
+    .sort((a, b) => b.peakPpg - a.peakPpg)
+
+  const meta = TEAM_BY_ABBREVIATION[teamAbbreviation]
+
+  return {
+    team: meta
+      ? {
+          abbreviation: teamAbbreviation,
+          city: meta.teamCity,
+          name: meta.teamName,
+          fullName: `${meta.teamCity} ${meta.teamName}`,
+          logoUrl: meta.logoUrl,
+        }
+      : null,
+    players,
+  }
+}

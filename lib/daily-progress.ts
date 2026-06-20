@@ -1,4 +1,8 @@
-export type GameMode = 'college' | 'country' | 'stats'
+export type GameMode = 'college' | 'country' | 'stats' | 'ppg'
+
+// Single source of truth for all daily game modes. Add new modes here and the
+// "puzzles played today" counter + streak logic stays mode-agnostic.
+export const GAME_MODES: GameMode[] = ['college', 'country', 'stats', 'ppg']
 
 export type ModeStatus = 'playing' | 'won' | 'lost'
 
@@ -85,9 +89,14 @@ export function getTodayCompletedCount(): number {
   const store = loadStore()
   const today = store.days[getTodayKey()]
   if (!today) return 0
-  return (['college', 'country', 'stats'] as GameMode[]).filter(
+  return GAME_MODES.filter(
     (mode) => today[mode]?.status === 'won' || today[mode]?.status === 'lost'
   ).length
+}
+
+/** Total number of daily modes available — drives the "N/total played" caption. */
+export function getTotalModeCount(): number {
+  return GAME_MODES.length
 }
 
 export function saveModeProgress(mode: GameMode, state: ModeDayState): void {
