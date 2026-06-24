@@ -2,13 +2,13 @@
 
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { HomePage } from '@/components/home-page'
+import { HomePage, DailyChallengePage, PlayAnytimePage } from '@/components/home-page'
 import { StartingFiveGame } from '@/components/starting-five-game'
 import { CountryGame } from '@/components/country-game'
 import { StatsGame } from '@/components/stats-game'
 import { HundredPpgGame } from '@/components/hundred-ppg-game'
 
-type Screen = 'home' | 'college' | 'country' | 'stats' | 'ppg'
+type Screen = 'home' | 'daily' | 'anytime' | 'college' | 'country' | 'stats' | 'ppg'
 
 export default function Page() {
   const [screen, setScreen] = useState<Screen>('home')
@@ -23,7 +23,33 @@ export default function Page() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.25 }}
         >
-          <HomePage onSelectMode={(mode) => setScreen(mode)} />
+          <HomePage
+            onSelectSection={(section) => setScreen(section === 'daily' ? 'daily' : 'anytime')}
+          />
+        </motion.div>
+      )}
+
+      {screen === 'daily' && (
+        <motion.div
+          key="daily"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+          <DailyChallengePage onSelectMode={(mode) => setScreen(mode)} onBack={() => setScreen('home')} />
+        </motion.div>
+      )}
+
+      {screen === 'anytime' && (
+        <motion.div
+          key="anytime"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+          <PlayAnytimePage onSelectMode={(mode) => setScreen(mode)} onBack={() => setScreen('home')} />
         </motion.div>
       )}
 
@@ -35,7 +61,7 @@ export default function Page() {
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
         >
-          <StartingFiveGame onBack={() => setScreen('home')} mode="college" />
+          <StartingFiveGame onBack={() => setScreen('daily')} mode="college" />
         </motion.div>
       )}
 
@@ -47,7 +73,7 @@ export default function Page() {
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
         >
-          <CountryGame onBack={() => setScreen('home')} />
+          <CountryGame onBack={() => setScreen('daily')} />
         </motion.div>
       )}
 
@@ -59,7 +85,7 @@ export default function Page() {
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
         >
-          <StatsGame onBack={() => setScreen('home')} />
+          <StatsGame onBack={() => setScreen('daily')} />
         </motion.div>
       )}
 
@@ -71,7 +97,7 @@ export default function Page() {
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
         >
-          <HundredPpgGame onBack={() => setScreen('home')} />
+          <HundredPpgGame onBack={() => setScreen('anytime')} />
         </motion.div>
       )}
     </AnimatePresence>
